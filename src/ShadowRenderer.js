@@ -13,6 +13,49 @@
   var unwrap = scope.unwrap;
   var wrap = scope.wrap;
 
+  // TODO(arv): Share
+  function setParentNode(node, parentNode) {
+    node.relatives_.setParentNode(node, parentNode);
+  }
+
+  function setFirstChild(node, firstChild) {
+    node.relatives_.setFirstChild(node, firstChild);
+  }
+
+  function setLastChild(node, lastChild) {
+    node.relatives_.setLastChild(node, lastChild);
+  }
+
+  function setNextSibling(node, nextSibling) {
+    node.relatives_.setNextSibling(node, nextSibling);
+  }
+
+  function setPreviousSibling(node, previousSibling) {
+    node.relatives_.setPreviousSibling(node, previousSibling);
+  }
+
+
+  function updateParentNode(node) {
+    node.relatives_.setParentNode(node, node.parentNode);
+  }
+
+  function updateFirstChild(node) {
+    node.relatives_.setFirstChild(node, node.firstChild);
+  }
+
+  function updateLastChild(node) {
+    node.relatives_.setLastChild(node, node.lastChild);
+  }
+
+  function updateNextSibling(node) {
+    node.relatives_.setNextSibling(node, node.nextSibling);
+  }
+
+  function updatePreviousSibling(node) {
+    node.relatives_.setPreviousSibling(node, node.previousSibling);
+  }
+
+
   /**
    * Updates the fields of a wrapper to a snapshot of the logical DOM as needed.
    * Up means parentNode
@@ -20,9 +63,12 @@
    * @param {!Node} wrapper
    */
   function updateWrapperUpAndSideways(wrapper) {
-    wrapper.previousSibling_ = wrapper.previousSibling;
-    wrapper.nextSibling_ = wrapper.nextSibling;
-    wrapper.parentNode_ = wrapper.parentNode;
+    // wrapper.previousSibling_ = wrapper.previousSibling;
+    updatePreviousSibling(wrapper);
+    // wrapper.nextSibling_ = wrapper.nextSibling;
+    updateNextSibling(wrapper);
+    // wrapper.parentNode_ = wrapper.parentNode;
+    updateParentNode(wrapper);
   }
 
   /**
@@ -31,8 +77,10 @@
    * @param {!Node} wrapper
    */
   function updateWrapperDown(wrapper) {
-    wrapper.firstChild_ = wrapper.firstChild;
-    wrapper.lastChild_ = wrapper.lastChild;
+    // wrapper.firstChild_ = wrapper.firstChild;
+    updateFirstChild(wrapper);
+    // wrapper.lastChild_ = wrapper.lastChild;
+    updateLastChild(wrapper);
   }
 
   function updateAllChildNodes(parentNodeWrapper) {
@@ -66,14 +114,16 @@
       updateWrapperUpAndSideways(childWrapper);
     }
 
-    parentNodeWrapper.lastChild_ = parentNodeWrapper.lastChild;
+    // parentNodeWrapper.lastChild_ = parentNodeWrapper.lastChild;
+    updateLastChild(parentNodeWrapper);
     if (parentNodeWrapper.lastChild === parentNodeWrapper.firstChild)
-      parentNodeWrapper.firstChild_ = parentNodeWrapper.firstChild;
+      // parentNodeWrapper.firstChild_ = parentNodeWrapper.firstChild;
+      updateFirstChild(parentNodeWrapper);
 
     var lastChildWrapper = wrap(parentNode.lastChild);
-    if (lastChildWrapper) {
-      lastChildWrapper.nextSibling_ = lastChildWrapper.nextSibling;
-    }
+    if (lastChildWrapper)
+      // lastChildWrapper.nextSibling_ = lastChildWrapper.nextSibling;
+      updateNextSibling(lastChildWrapper);
 
     parentNode.appendChild(child);
   }
@@ -85,14 +135,18 @@
     updateWrapperUpAndSideways(childWrapper);
 
     if (childWrapper.previousSibling)
-      childWrapper.previousSibling.nextSibling_ = childWrapper;
+      // childWrapper.previousSibling.nextSibling_ = childWrapper;
+      setNextSibling(childWrapper.previousSibling, childWrapper);
     if (childWrapper.nextSibling)
-      childWrapper.nextSibling.previousSibling_ = childWrapper;
+      // childWrapper.nextSibling.previousSibling_ = childWrapper;
+      setPreviousSibling(childWrapper.nextSibling, childWrapper);
 
     if (parentNodeWrapper.lastChild === childWrapper)
-      parentNodeWrapper.lastChild_ = childWrapper;
+      // parentNodeWrapper.lastChild_ = childWrapper;
+      setLastChild(parentNodeWrapper, childWrapper);
     if (parentNodeWrapper.firstChild === childWrapper)
-      parentNodeWrapper.firstChild_ = childWrapper;
+      // parentNodeWrapper.firstChild_ = childWrapper;
+      setFirstChild(parentNodeWrapper, childWrapper);
 
     parentNode.removeChild(child);
   }

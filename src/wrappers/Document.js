@@ -156,7 +156,7 @@
       function GeneratedWrapper(node) {
         if (!node)
           return document.createElement(tagName);
-        this.impl = node;
+        HTMLElement.call(this, node);
       }
       GeneratedWrapper.prototype = prototype;
       GeneratedWrapper.prototype.constructor = GeneratedWrapper;

@@ -29,13 +29,19 @@
     if (node.nodeType !== Node.DOCUMENT_FRAGMENT_NODE) {
       if (node.parentNode)
         node.parentNode.removeChild(node);
-      node.parentNode_ = parentNode;
-      node.previousSibling_ = previousNode;
-      node.nextSibling_ = nextNode;
+      // node.parentNode_ = parentNode;
+      setParentNode(node, parentNode);
+      // node.previousSibling_ = previousNode;
+      setPreviousSibling(node, previousNode);
+      // node.nextSibling_ = nextNode;
+      setNextSibling(node, nextNode);
+
       if (previousNode)
-        previousNode.nextSibling_ = node;
+        // previousNode.nextSibling_ = node;
+        setNextSibling(previousNode, node);
       if (nextNode)
-        nextNode.previousSibling_ = node;
+        // nextNode.previousSibling_ = node;
+        setPreviousSibling(nextNode, node);
       return [node];
     }
 
@@ -44,18 +50,23 @@
     while (firstChild = node.firstChild) {
       node.removeChild(firstChild);
       nodes.push(firstChild);
-      firstChild.parentNode_ = parentNode;
+      // firstChild.parentNode_ = parentNode;
+      setParentNode(firstChild, parentNode)
     }
 
     for (var i = 0; i < nodes.length; i++) {
-      nodes[i].previousSibling_ = nodes[i - 1] || previousNode;
-      nodes[i].nextSibling_ = nodes[i + 1] || nextNode;
+      // nodes[i].previousSibling_ = nodes[i - 1] || previousNode;
+      setPreviousSibling(nodes[i], nodes[i - 1] || previousNode);
+      // nodes[i].nextSibling_ = nodes[i + 1] || nextNode;
+      setNextSibling(nodes[i], nodes[i + 1] || nextNode);
     }
 
     if (previousNode)
-      previousNode.nextSibling_ = nodes[0];
+      // previousNode.nextSibling_ = nodes[0];
+      setNextSibling(previousNode, nodes[0]);
     if (nextNode)
-      nextNode.previousSibling_ = nodes[nodes.length - 1];
+      // nextNode.previousSibling_ = nodes[nodes.length - 1];
+      setPreviousSibling(nextNode, nodes[nodes.length - 1]);
 
     return nodes;
   }
@@ -105,11 +116,16 @@
         var parentNode = childNode.parentNode;
         if (parentNode)
           originalRemoveChild.call(parentNode, childNode);
-        childWrapper.previousSibling_ = childWrapper.nextSibling_ =
-            childWrapper.parentNode_ = null;
+        // childWrapper.previousSibling_ = childWrapper.nextSibling_ =
+        //     childWrapper.parentNode_ = null;
+        setPreviousSibling(childWrapper, null);
+        setNextSibling(childWrapper, null);
+        setParentNode(childWrapper, null);
         childWrapper = nextSibling;
       }
-      wrapper.firstChild_ = wrapper.lastChild_ = null;
+      // wrapper.firstChild_ = wrapper.lastChild_ = null;
+      setFirstChild(wrapper, null);
+      setLastChild(wrapper, null);
     } else {
       var node = unwrap(wrapper);
       var child = node.firstChild;
@@ -121,6 +137,157 @@
       }
     }
   }
+
+  var nativeRelatives = {
+    getParentNode: function(wrapper) {
+      return wrap(wrapper.impl.parentNode);
+    },
+    getFirstChild: function(wrapper) {
+      return wrap(wrapper.impl.firstChild);
+    },
+    getLastChild: function(wrapper) {
+      return wrap(wrapper.impl.lastChild);
+    },
+    getNextSibling: function(wrapper) {
+      return wrap(wrapper.impl.nextSibling);
+    },
+    getPreviousSibling: function(wrapper) {
+      return wrap(wrapper.impl.previousSibling);
+    },
+
+    setParentNode: function(wrapper, parentNodeWrapper) {
+      var relatives = wrapper.relatives_ = new ShadowRelatives();
+      relatives.setParentNode(wrapper, parentNodeWrapper);
+    },
+    setFirstChild: function(wrapper, firstChildWrapper) {
+      var relatives = wrapper.relatives_ = new ShadowRelatives();
+      relatives.setFirstChild(wrapper, firstChildWrapper);
+    },
+    setLastChild: function(wrapper, lastChildWrapper) {
+      var relatives = wrapper.relatives_ = new ShadowRelatives();
+      relatives.setLastChild(wrapper, lastChildWrapper);
+    },
+    setNextSibling: function(wrapper, nextSiblingWrapper) {
+      var relatives = wrapper.relatives_ = new ShadowRelatives();
+      relatives.setNextSibling(wrapper, nextSiblingWrapper);
+    },
+    setPreviousSibling: function(wrapper, previousSiblingWrapper) {
+      var relatives = wrapper.relatives_ = new ShadowRelatives();
+      relatives.setPreviousSibling(wrapper, previousSiblingWrapper);
+    },
+
+    clearParentNode: function(wrapper) {},
+    clearFirstChild: function(wrapper) {},
+    clearLastChild: function(wrapper) {},
+    clearNextSibling: function(wrapper) {},
+    clearPreviousSibling: function(wrapper) {},
+  };
+
+  function ShadowRelatives() {
+    this.parentNode_ = undefined;
+    this.firstChild_ = undefined;
+    this.lastChild_ = undefined;
+    this.nextSibling_ = undefined;
+    this.previousSibling_ = undefined;
+  }
+
+  ShadowRelatives.prototype = {
+    getParentNode: function(wrapper) {
+      return this.parentNode_ !== undefined ? this.parentNode_ :
+          nativeRelatives.getParentNode(wrapper);
+    },
+    getFirstChild: function(wrapper) {
+      return this.firstChild_ !== undefined ? this.firstChild_ :
+          nativeRelatives.getFirstChild(wrapper);
+    },
+    getLastChild: function(wrapper) {
+      return this.lastChild_ !== undefined ? this.lastChild_ :
+          nativeRelatives.getLastChild(wrapper);
+    },
+    getNextSibling: function(wrapper) {
+      return this.nextSibling_ !== undefined ? this.nextSibling_ :
+          nativeRelatives.getNextSibling(wrapper);
+    },
+    getPreviousSibling: function(wrapper) {
+      return this.previousSibling_ !== undefined ? this.previousSibling_ :
+          nativeRelatives.getPreviousSibling(wrapper);
+    },
+
+    setParentNode: function(wrapper, parentNodeWrapper) {
+      this.parentNode_ = parentNodeWrapper;
+    },
+    setFirstChild: function(wrapper, firstChildWrapper) {
+      this.firstChild_ = firstChildWrapper;
+    },
+    setLastChild: function(wrapper, lastChildWrapper) {
+      this.lastChild_ = lastChildWrapper;
+    },
+    setNextSibling: function(wrapper, nextSiblingWrapper) {
+      this.nextSibling_ = nextSiblingWrapper;
+    },
+    setPreviousSibling: function(wrapper, previousSiblingWrapper) {
+      this.previousSibling_ = previousSiblingWrapper;
+    },
+
+    // TODO(arv): Clearing all should fall back to nativeRelatives.
+    clearParentNode: function(wrapper) {
+      this.parentNode_ = undefined;
+    },
+    clearFirstChild: function(wrapper) {
+      this.firstChild_ = undefined;
+    },
+    clearLastChild: function(wrapper) {
+      this.lastChild_ = undefined;
+    },
+    clearNextSibling: function(wrapper) {
+      this.nextSibling_ = undefined;
+    },
+    clearPreviousSibling: function(wrapper) {
+      this.previousSibling_ = undefined;
+    },
+  };
+
+  function setParentNode(node, parentNode) {
+    node.relatives_.setParentNode(node, parentNode);
+  }
+
+  function setFirstChild(node, firstChild) {
+    node.relatives_.setFirstChild(node, firstChild);
+  }
+
+  function setLastChild(node, lastChild) {
+    node.relatives_.setLastChild(node, lastChild);
+  }
+
+  function setNextSibling(node, nextSibling) {
+    node.relatives_.setNextSibling(node, nextSibling);
+  }
+
+  function setPreviousSibling(node, previousSibling) {
+    node.relatives_.setPreviousSibling(node, previousSibling);
+  }
+
+
+  function clearParentNode(wrapper) {
+    wrapper.relatives_.clearParentNode(wrapper);
+  }
+
+  function clearFirstChild(wrapper) {
+    wrapper.relatives_.clearFirstChild(wrapper);
+  }
+
+  function clearLastChild(wrapper) {
+    wrapper.relatives_.clearLastChild(wrapper);
+  }
+
+  function clearNextSibling(wrapper) {
+    wrapper.relatives_.clearNextSibling(wrapper);
+  }
+
+  function clearPreviousSibling(wrapper) {
+    wrapper.relatives_.clearPreviousSibling(wrapper);
+  }
+
 
   var OriginalNode = window.Node;
 
@@ -135,39 +302,7 @@
 
     EventTarget.call(this, original);
 
-    // These properties are used to override the visual references with the
-    // logical ones. If the value is undefined it means that the logical is the
-    // same as the visual.
-
-    /**
-     * @type {Node|undefined}
-     * @private
-     */
-    this.parentNode_ = undefined;
-
-    /**
-     * @type {Node|undefined}
-     * @private
-     */
-    this.firstChild_ = undefined;
-
-    /**
-     * @type {Node|undefined}
-     * @private
-     */
-    this.lastChild_ = undefined;
-
-    /**
-     * @type {Node|undefined}
-     * @private
-     */
-    this.nextSibling_ = undefined;
-
-    /**
-     * @type {Node|undefined}
-     * @private
-     */
-    this.previousSibling_ = undefined;
+    this.relatives_ = nativeRelatives;
   };
 
   var originalAppendChild = OriginalNode.prototype.appendChild;
@@ -189,9 +324,11 @@
         var nextNode = null;
         var nodes = collectNodes(childWrapper, this, previousNode, nextNode);
 
-        this.lastChild_ = nodes[nodes.length - 1];
+        // this.lastChild_ = nodes[nodes.length - 1];
+        setLastChild(this, nodes[nodes.length - 1])
         if (!previousNode)
-          this.firstChild_ = nodes[0];
+          // this.firstChild_ = nodes[0];
+          setFirstChild(this, nodes[0]);
 
         originalAppendChild.call(this.impl, unwrapNodesForInsertion(this, nodes));
       } else {
@@ -219,7 +356,8 @@
         var nodes = collectNodes(childWrapper, this, previousNode, nextNode);
 
         if (this.firstChild === refWrapper)
-          this.firstChild_ = nodes[0];
+          // this.firstChild_ = nodes[0];
+          setFirstChild(this, nodes[0]);
 
         // insertBefore refWrapper no matter what the parent is?
         var refNode = unwrap(refWrapper);
@@ -265,18 +403,26 @@
           originalRemoveChild.call(parentNode, childNode);
 
         if (thisFirstChild === childWrapper)
-          this.firstChild_ = childWrapperNextSibling;
+          // this.firstChild_ = childWrapperNextSibling;
+          setFirstChild(this, childWrapperNextSibling);
         if (thisLastChild === childWrapper)
-          this.lastChild_ = childWrapperPreviousSibling;
+          // this.lastChild_ = childWrapperPreviousSibling;
+          setLastChild(this, childWrapperPreviousSibling);
         if (childWrapperPreviousSibling)
-          childWrapperPreviousSibling.nextSibling_ = childWrapperNextSibling;
+          // childWrapperPreviousSibling.nextSibling_ = childWrapperNextSibling;
+          setNextSibling(childWrapperPreviousSibling, childWrapperNextSibling);
         if (childWrapperNextSibling) {
-          childWrapperNextSibling.previousSibling_ =
-              childWrapperPreviousSibling;
+          // childWrapperNextSibling.previousSibling_ =
+          //     childWrapperPreviousSibling;
+          setPreviousSibling(childWrapperNextSibling,
+                             childWrapperPreviousSibling);
         }
 
-        childWrapper.previousSibling_ = childWrapper.nextSibling_ =
-            childWrapper.parentNode_ = undefined;
+        // childWrapper.previousSibling_ = childWrapper.nextSibling_ =
+        //     childWrapper.parentNode_ = undefined;
+        clearPreviousSibling(childWrapper);
+        clearNextSibling(childWrapper);
+        clearParentNode(childWrapper);
       } else {
         ensureSameOwnerDocument(this, childWrapper);
         originalRemoveChild.call(this.impl, childNode);
@@ -307,12 +453,17 @@
                                  previousNode, nextNode);
 
         if (this.firstChild === oldChildWrapper)
-          this.firstChild_ = nodes[0];
+          // this.firstChild_ = nodes[0];
+          setFirstChild(this, nodes[0]);
         if (this.lastChild === oldChildWrapper)
-          this.lastChild_ = nodes[nodes.length - 1];
+          // this.lastChild_ = nodes[nodes.length - 1];
+          setLastChild(this, nodes[nodes.length - 1]);
 
-        oldChildWrapper.previousSibling_ = oldChildWrapper.nextSibling_ =
-            oldChildWrapper.parentNode_ = undefined;
+        // oldChildWrapper.previousSibling_ = oldChildWrapper.nextSibling_ =
+        //     oldChildWrapper.parentNode_ = undefined;
+        clearPreviousSibling(oldChildWrapper);
+        clearNextSibling(oldChildWrapper);
+        clearParentNode(oldChildWrapper);
 
         // replaceChild no matter what the parent is?
         if (oldChildNode.parentNode) {
@@ -336,33 +487,27 @@
 
     /** @type {Node} */
     get parentNode() {
-      // If the parentNode has not been overridden, use the original parentNode.
-      return this.parentNode_ !== undefined ?
-          this.parentNode_ : wrap(this.impl.parentNode);
+      return this.relatives_.getParentNode(this);
     },
 
     /** @type {Node} */
     get firstChild() {
-      return this.firstChild_ !== undefined ?
-          this.firstChild_ : wrap(this.impl.firstChild);
+      return this.relatives_.getFirstChild(this);
     },
 
     /** @type {Node} */
     get lastChild() {
-      return this.lastChild_ !== undefined ?
-          this.lastChild_ : wrap(this.impl.lastChild);
+      return this.relatives_.getLastChild(this);
     },
 
     /** @type {Node} */
     get nextSibling() {
-      return this.nextSibling_ !== undefined ?
-          this.nextSibling_ : wrap(this.impl.nextSibling);
+      return this.relatives_.getNextSibling(this);
     },
 
     /** @type {Node} */
     get previousSibling() {
-      return this.previousSibling_ !== undefined ?
-          this.previousSibling_ : wrap(this.impl.previousSibling);
+      return this.relatives_.getPreviousSibling(this);
     },
 
     get parentElement() {
