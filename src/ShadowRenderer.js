@@ -104,11 +104,11 @@
       removeChild(wrap(parentNode), nodeWrapper);
   }
 
-  var distributedChildNodesTable = new SideTable();
-  var eventParentsTable = new SideTable();
-  var insertionParentTable = new SideTable();
-  var rendererForHostTable = new SideTable();
-  var shadowDOMRendererTable = new SideTable();
+  var distributedChildNodesTable = new InheritingSideTable();
+  var eventParentsTable = new InheritingSideTable();
+  var insertionParentTable = new InheritingSideTable();
+  var rendererForHostTable = new InheritingSideTable();
+  var shadowDOMRendererTable = new InheritingSideTable();
 
   var reprCounter = 0;
 

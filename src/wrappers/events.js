@@ -12,17 +12,17 @@
   var wrap = scope.wrap;
   var wrappers = scope.wrappers;
 
-  var wrappedFuns = new SideTable();
-  var listenersTable = new SideTable();
-  var handledEventsTable = new SideTable();
-  var targetTable = new SideTable();
-  var currentTargetTable = new SideTable();
-  var relatedTargetTable = new SideTable();
-  var eventPhaseTable = new SideTable();
-  var stopPropagationTable = new SideTable();
-  var stopImmediatePropagationTable = new SideTable();
-  var eventHandlersTable = new SideTable();
-  var eventPathTable = new SideTable();
+  var wrappedFuns = new InheritingSideTable();
+  var listenersTable = new InheritingSideTable();
+  var handledEventsTable = new InheritingSideTable();
+  var targetTable = new InheritingSideTable();
+  var currentTargetTable = new InheritingSideTable();
+  var relatedTargetTable = new InheritingSideTable();
+  var eventPhaseTable = new InheritingSideTable();
+  var stopPropagationTable = new InheritingSideTable();
+  var stopImmediatePropagationTable = new InheritingSideTable();
+  var eventHandlersTable = new InheritingSideTable();
+  var eventPathTable = new InheritingSideTable();
 
   function isShadowRoot(node) {
     return node instanceof wrappers.ShadowRoot;

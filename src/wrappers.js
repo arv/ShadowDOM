@@ -7,7 +7,7 @@ var ShadowDOMPolyfill = {};
 (function(scope) {
   'use strict';
 
-  var wrapperTable = new SideTable();
+  var wrapperTable = new InheritingSideTable();
   var constructorTable = new SideTable();
   var nativePrototypeTable = new SideTable();
   var wrappers = Object.create(null);

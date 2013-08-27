@@ -13,8 +13,8 @@
   var unwrap = scope.unwrap;
   var wrap = scope.wrap;
 
-  var contentTable = new SideTable();
-  var templateContentsOwnerTable = new SideTable();
+  var contentTable = new InheritingSideTable();
+  var templateContentsOwnerTable = new InheritingSideTable();
 
   // http://dvcs.w3.org/hg/webcomponents/raw-file/tip/spec/templates/index.html#dfn-template-contents-owner
   function getTemplateContentsOwner(doc) {
