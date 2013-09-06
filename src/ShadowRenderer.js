@@ -5,6 +5,7 @@
 (function(scope) {
   'use strict';
 
+  var Element = scope.wrappers.Element;
   var HTMLContentElement = scope.wrappers.HTMLContentElement;
   var HTMLShadowElement = scope.wrappers.HTMLShadowElement;
   var Node = scope.wrappers.Node;
@@ -190,14 +191,14 @@
     if (!select)
       return true;
 
-    if (node.nodeType !== Node.ELEMENT_NODE)
+    if (!(node instanceof Element))
       return false;
 
     // TODO(arv): This does not seem right. Need to check for a simple selector.
     if (!selectorMatchRegExp.test(select))
       return false;
 
-    if (select[0] === ':' &&!allowedPseudoRegExp.test(select))
+    if (select[0] === ':' && allowedPseudoRegExp.test(select))
       return false;
 
     try {
@@ -489,7 +490,6 @@
 
     // http://dvcs.w3.org/hg/webcomponents/raw-file/tip/spec/shadow/index.html#dfn-distribution-algorithm
     distribute: function(tree, pool) {
-      var anyRemoved = false;
       var self = this;
 
       visit(tree, isActiveInsertionPoint,
@@ -505,17 +505,9 @@
               if (matchesCriteria(node, insertionPoint)) {  // 1.2.2
                 distributeChildToInsertionPoint(node, insertionPoint);  // 1.2.2.1
                 pool[i] = undefined;  // 1.2.2.2
-                anyRemoved = true;
               }
             }
           });
-
-      if (!anyRemoved)
-        return pool;
-
-      return pool.filter(function(item) {
-        return item !== undefined;
-      });
     },
 
     // http://dvcs.w3.org/hg/webcomponents/raw-file/tip/spec/shadow/index.html#dfn-tree-composition
@@ -546,7 +538,7 @@
         });
         point = shadowInsertionPoint;
 
-        pool = this.distribute(tree, pool);  // 4.2.
+        this.distribute(tree, pool);  // 4.2.
         if (point) {  // 4.3.
           var nextOlderTree = tree.olderShadowRoot;  // 4.3.1.
           if (!nextOlderTree) {
@@ -574,16 +566,16 @@
 
   function isActiveInsertionPoint(node) {
     // <content> inside another <content> or <shadow> is considered inactive.
-    return node.localName === 'content';
+    return node instanceof HTMLContentElement;
   }
 
   function isShadowInsertionPoint(node) {
-    return node.localName === 'shadow';
+    return node instanceof HTMLShadowElement;
   }
 
   function isActiveShadowInsertionPoint(node) {
     // <shadow> inside another <content> or <shadow> is considered inactive.
-    return node.localName === 'shadow';
+    return node instanceof HTMLShadowElement;
   }
 
   function isShadowHost(shadowHost) {
