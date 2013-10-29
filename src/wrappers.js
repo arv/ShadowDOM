@@ -239,6 +239,9 @@ var ShadowDOMPolyfill = {};
   var OriginalRange = window.Range;
   var OriginalCanvasRenderingContext2D = window.CanvasRenderingContext2D;
   var OriginalWebGLRenderingContext = window.WebGLRenderingContext;
+  // IE has issues with document fragments not being instances of Node at some
+  // points in time.
+  var OriginalDocumentFragment = window.DocumentFragment;
 
   function isWrapper(object) {
     return object instanceof wrappers.EventTarget ||
@@ -258,7 +261,8 @@ var ShadowDOMPolyfill = {};
            object instanceof OriginalDOMImplementation ||
            object instanceof OriginalCanvasRenderingContext2D ||
            OriginalWebGLRenderingContext &&
-               object instanceof OriginalWebGLRenderingContext;
+               object instanceof OriginalWebGLRenderingContext ||
+           object instanceof OriginalDocumentFragment;
   }
 
   /**
