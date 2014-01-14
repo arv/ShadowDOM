@@ -38,6 +38,14 @@ suite('HTML Template Element', function() {
     assert.equal(template.innerHTML, '<a></a><b></b>');
   });
 
+  test('get innerHTML', function() {
+    var div = document.createElement('div');
+    div.innerHTML = '<p><template><a></a><b></b></template></p>';
+    var p = div.firstChild;
+
+    assert.equal(p.innerHTML, '<template><a></a><b></b></template>');
+  });
+
   test('set innerHTML', function() {
     var div = document.createElement('div');
     div.innerHTML = '<template><a></a><b></b></template>';

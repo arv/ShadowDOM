@@ -15,6 +15,7 @@
   var snapshotNodeList = scope.snapshotNodeList;
   var unwrap = scope.unwrap;
   var wrap = scope.wrap;
+  var wrappers = scope.wrappers;
 
   /////////////////////////////////////////////////////////////////////////////
   // innerHTML and outerHTML
@@ -116,6 +117,9 @@
   }
 
   function getInnerHTML(node) {
+    if (node instanceof wrappers.HTMLTemplateElement)
+      node = node.content;
+
     var s = '';
     for (var child = node.firstChild; child; child = child.nextSibling) {
       s += getOuterHTML(child, node);
@@ -128,6 +132,8 @@
     node.textContent = '';
     var tempElement = unwrap(node.ownerDocument.createElement(tagName));
     tempElement.innerHTML = value;
+    if (node instanceof wrappers.HTMLTemplateElement)
+      node = node.content;
     var firstChild;
     while (firstChild = tempElement.firstChild) {
       node.appendChild(wrap(firstChild));
