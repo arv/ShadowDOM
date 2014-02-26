@@ -20,6 +20,7 @@
     'src/wrappers.js',
     'src/microtask.js',
     'src/MutationObserver.js',
+    'src/ExtData.js',
     'src/wrappers/events.js',
     'src/wrappers/NodeList.js',
     'src/wrappers/HTMLCollection.js',

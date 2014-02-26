@@ -11,6 +11,7 @@
   var Node = scope.wrappers.Node;
   var ShadowRoot = scope.wrappers.ShadowRoot;
   var assert = scope.assert;
+  var getExtData = scope.getExtData;
   var mixin = scope.mixin;
   var oneOf = scope.oneOf;
   var unwrap = scope.unwrap;
@@ -96,30 +97,23 @@
     parentNode.removeChild(node);
   }
 
-  var distributedChildNodesTable = new WeakMap();
-  var eventParentsTable = new WeakMap();
-  var insertionParentTable = new WeakMap();
-  var rendererForHostTable = new WeakMap();
-
   function distributeChildToInsertionPoint(child, insertionPoint) {
     getDistributedChildNodes(insertionPoint).push(child);
     assignToInsertionPoint(child, insertionPoint);
 
-    var eventParents = eventParentsTable.get(child);
+    var extData = getExtData(child);
+    var eventParents = extData.eventParents;
     if (!eventParents)
-      eventParentsTable.set(child, eventParents = []);
+      extData.eventParents = eventParents = [];
     eventParents.push(insertionPoint);
   }
 
   function resetDistributedChildNodes(insertionPoint) {
-    distributedChildNodesTable.set(insertionPoint, []);
+    getExtData(insertionPoint).distributedNodes = [];
   }
 
   function getDistributedChildNodes(insertionPoint) {
-    var rv = distributedChildNodesTable.get(insertionPoint);
-    if (!rv)
-      distributedChildNodesTable.set(insertionPoint, rv = []);
-    return rv;
+    return getExtData(insertionPoint).distributedNodes;
   }
 
   function getChildNodesSnapshot(node) {
@@ -244,10 +238,11 @@
    * @return {!ShadowRenderer}
    */
   function getRendererForHost(host) {
-    var renderer = rendererForHostTable.get(host);
+    var extData = getExtData(host);
+    var renderer = extData.rendererForHost;
     if (!renderer) {
       renderer = new ShadowRenderer(host);
-      rendererForHostTable.set(host, renderer);
+      extData.rendererForHost = renderer;
     }
     return renderer;
   }
@@ -600,7 +595,7 @@
   }
 
   function assignToInsertionPoint(tree, point) {
-    insertionParentTable.set(tree, point);
+    getExtData(tree).insertionParent = point;
   }
 
   // http://dvcs.w3.org/hg/webcomponents/raw-file/tip/spec/shadow/index.html#rendering-shadow-trees
@@ -631,13 +626,6 @@
     return false;
   };
 
-  HTMLContentElement.prototype.getDistributedNodes = function() {
-    // TODO(arv): We should only rerender the dirty ancestor renderers (from
-    // the root and down).
-    renderAllPending();
-    return getDistributedChildNodes(this);
-  };
-
   HTMLShadowElement.prototype.nodeIsInserted_ =
   HTMLContentElement.prototype.nodeIsInserted_ = function() {
     // Invalidate old renderer if any.
@@ -652,10 +640,8 @@
       renderer.invalidate();
   };
 
-  scope.eventParentsTable = eventParentsTable;
   scope.getRendererForHost = getRendererForHost;
   scope.getShadowTrees = getShadowTrees;
-  scope.insertionParentTable = insertionParentTable;
   scope.renderAllPending = renderAllPending;
 
   // Exposed for testing

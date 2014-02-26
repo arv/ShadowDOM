@@ -6,19 +6,19 @@
   'use strict';
 
   var HTMLElement = scope.wrappers.HTMLElement;
+  var getExtData = scope.getExtData;
+  var getExtDataRaw = scope.getExtDataRaw;
   var mixin = scope.mixin;
   var registerWrapper = scope.registerWrapper;
   var unwrap = scope.unwrap;
   var wrap = scope.wrap;
 
-  var contentTable = new WeakMap();
-  var templateContentsOwnerTable = new WeakMap();
-
   // http://dvcs.w3.org/hg/webcomponents/raw-file/tip/spec/templates/index.html#dfn-template-contents-owner
   function getTemplateContentsOwner(doc) {
     if (!doc.defaultView)
       return doc;
-    var d = templateContentsOwnerTable.get(doc);
+    var extData = getExtDataRaw(doc);
+    var d = extData.templateContentsOwner;
     if (!d) {
       // TODO(arv): This should either be a Document or HTMLDocument depending
       // on doc.
@@ -26,7 +26,7 @@
       while (d.lastChild) {
         d.removeChild(d.lastChild);
       }
-      templateContentsOwnerTable.set(doc, d);
+      extData.templateContentsOwner = d;
     }
     return d;
   }
@@ -48,7 +48,7 @@
     HTMLElement.call(this, node);
     if (!OriginalHTMLTemplateElement) {
       var content = extractContent(node);
-      contentTable.set(this, wrap(content));
+      getExtDataRaw(node).content = wrap(content);
     }
   }
   HTMLTemplateElement.prototype = Object.create(HTMLElement.prototype);
@@ -57,11 +57,8 @@
     get content() {
       if (OriginalHTMLTemplateElement)
         return wrap(this.impl.content);
-      return contentTable.get(this);
+      return getExtData(this).content;
     },
-
-    // TODO(arv): cloneNode needs to clone content.
-
   });
 
   if (OriginalHTMLTemplateElement)

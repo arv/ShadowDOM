@@ -5,7 +5,9 @@
 (function(scope) {
   'use strict';
 
+  var createExtData = scope.createExtData;
   var forwardMethodsToWrapper = scope.forwardMethodsToWrapper;
+  var getExtData = scope.getExtData;
   var mixin = scope.mixin;
   var registerWrapper = scope.registerWrapper;
   var unwrap = scope.unwrap;
@@ -22,7 +24,6 @@
   var eventPhaseTable = new WeakMap();
   var stopPropagationTable = new WeakMap();
   var stopImmediatePropagationTable = new WeakMap();
-  var eventHandlersTable = new WeakMap();
   var eventPathTable = new WeakMap();
 
   function isShadowRoot(node) {
@@ -53,7 +54,7 @@
       return getInsertionParent(node) || node.host;
 
     // 2.
-    var eventParents = scope.eventParentsTable.get(node);
+    var eventParents = getExtData(node).eventParents;
     if (eventParents) {
       // Copy over the remaining event parents for next iteration.
       for (var i = 1; i < eventParents.length; i++) {
@@ -153,7 +154,7 @@
   }
 
   function getInsertionParent(node) {
-    return scope.insertionParentTable.get(node);
+    return getExtData(node).insertionParent;
   }
 
   function isDistributed(node) {
@@ -378,6 +379,7 @@
       this.impl = type;
     else
       return wrap(constructEvent(OriginalEvent, 'Event', type, options));
+
   }
   Event.prototype = {
     get target() {
@@ -593,6 +595,8 @@
    */
   function EventTarget(impl) {
     this.impl = impl;
+    // OriginalEventTarget does not exist in IE.
+    createExtData(impl);
   }
 
   // Node and Window have different internal type checks in WebKit so we cannot
@@ -746,7 +750,7 @@
    */
   function getEventHandlerGetter(name) {
     return function() {
-      var inlineEventHandlers = eventHandlersTable.get(this);
+      var inlineEventHandlers = getExtData(this).eventHandlers;
       return inlineEventHandlers && inlineEventHandlers[name] &&
           inlineEventHandlers[name].value || null;
      };
@@ -760,10 +764,11 @@
   function getEventHandlerSetter(name) {
     var eventType = name.slice(2);
     return function(value) {
-      var inlineEventHandlers = eventHandlersTable.get(this);
+      var extData = getExtData(this);
+      var inlineEventHandlers = extData.eventHandlers;
       if (!inlineEventHandlers) {
         inlineEventHandlers = Object.create(null);
-        eventHandlersTable.set(this, inlineEventHandlers);
+        extData.eventHandlers = inlineEventHandlers;
       }
 
       var old = inlineEventHandlers[name];

@@ -6,6 +6,8 @@
   'use strict';
 
   var HTMLElement = scope.wrappers.HTMLElement;
+  var getExtData = scope.getExtData;
+  var getExtDataRaw = scope.getExtDataRaw;
   var mixin = scope.mixin;
   var registerWrapper = scope.registerWrapper;
 
@@ -13,6 +15,7 @@
 
   function HTMLContentElement(node) {
     HTMLElement.call(this, node);
+    getExtDataRaw(node).distributedNodes = [];
   }
   HTMLContentElement.prototype = Object.create(HTMLElement.prototype);
   mixin(HTMLContentElement.prototype, {
@@ -27,9 +30,16 @@
       HTMLElement.prototype.setAttribute.call(this, n, v);
       if (String(n).toLowerCase() === 'select')
         this.invalidateShadowRenderer(true);
-    }
+    },
 
     // getDistributedNodes is added in ShadowRenderer
+
+    getDistributedNodes: function() {
+      // TODO(arv): We should only rerender the dirty ancestor renderers (from
+      // the root and down).
+      scope.renderAllPending();
+      return getExtData(this).distributedNodes;
+    }
 
     // TODO: attribute boolean resetStyleInheritance;
   });

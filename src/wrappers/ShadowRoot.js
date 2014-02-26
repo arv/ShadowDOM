@@ -1,20 +1,21 @@
-// Copyright 2013 The Polymer Authors. All rights reserved.
-// Use of this source code is goverened by a BSD-style
-// license that can be found in the LICENSE file.
+/**
+ * Copyright 2014 The Polymer Authors. All right s reserved.
+ * Use of this source code is goverened by a BSD-style
+ * license that can be found in the LICENSE file.
+ */
 
 (function(scope) {
   'use strict';
 
   var DocumentFragment = scope.wrappers.DocumentFragment;
   var elementFromPoint = scope.elementFromPoint;
+  var getExtData = scope.getExtData;
+  var getExtDataRaw = scope.getExtDataRaw;
   var getInnerHTML = scope.getInnerHTML;
   var mixin = scope.mixin;
   var rewrap = scope.rewrap;
   var setInnerHTML = scope.setInnerHTML;
   var unwrap = scope.unwrap;
-
-  var shadowHostTable = new WeakMap();
-  var nextOlderShadowTreeTable = new WeakMap();
 
   var spaceCharRe = /[ \t\n\r\f]/;
 
@@ -26,12 +27,14 @@
     // DocumentFragment instance. Override that.
     rewrap(node, this);
 
-    var oldShadowRoot = hostWrapper.shadowRoot;
-    nextOlderShadowTreeTable.set(this, oldShadowRoot);
-
-    shadowHostTable.set(this, hostWrapper);
+    var olderShadowRoot = hostWrapper.shadowRoot;
+    var extData = getExtDataRaw(node);
+    extData.host = hostWrapper;
+    extData.olderShadowRoot = olderShadowRoot;
   }
+
   ShadowRoot.prototype = Object.create(DocumentFragment.prototype);
+
   mixin(ShadowRoot.prototype, {
     get innerHTML() {
       return getInnerHTML(this);
@@ -42,15 +45,15 @@
     },
 
     get olderShadowRoot() {
-      return nextOlderShadowTreeTable.get(this) || null;
+      return getExtData(this).olderShadowRoot;
     },
 
     get host() {
-      return shadowHostTable.get(this) || null;
+      return getExtData(this).host;
     },
 
     invalidateShadowRenderer: function() {
-      return shadowHostTable.get(this).invalidateShadowRenderer();
+      return getExtData(this).host.invalidateShadowRenderer();
     },
 
     elementFromPoint: function(x, y) {
