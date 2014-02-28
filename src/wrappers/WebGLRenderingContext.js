@@ -16,11 +16,7 @@
   if (!OriginalWebGLRenderingContext)
     return;
 
-  function WebGLRenderingContext(impl) {
-    this.impl = impl;
-  }
-
-  mixin(WebGLRenderingContext.prototype, {
+  var prototype = {
     get canvas() {
       return wrap(this.impl.canvas);
     },
@@ -34,7 +30,7 @@
       arguments[6] = unwrapIfNeeded(arguments[6]);
       this.impl.texSubImage2D.apply(this.impl, arguments);
     }
-  });
+  };
 
   // Blink/WebKit has broken DOM bindings. Usually we would create an instance
   // of the object and pass it into registerWrapper as a "blueprint" but
@@ -43,8 +39,41 @@
   var instanceProperties = /WebKit/.test(navigator.userAgent) ?
       {drawingBufferHeight: null, drawingBufferWidth: null} : {};
 
-  registerWrapper(OriginalWebGLRenderingContext, WebGLRenderingContext,
-      instanceProperties);
+  var WebGLRenderingContext;
+
+  // WebGL2 has WebGLRenderingContext : WebGLRenderingContextBase
+  if (OriginalWebGLRenderingContext.prototype.__proto__ !== Object.prototype) {
+
+    var OriginalWebGLRenderingContextBase =
+        OriginalWebGLRenderingContext.__proto__;
+
+    var WebGLRenderingContextBase = function(impl) {
+      this.impl = impl;
+    };
+    mixin(WebGLRenderingContextBase.prototype, prototype);
+
+    registerWrapper(
+        OriginalWebGLRenderingContextBase,
+        WebGLRenderingContextBase,
+        instanceProperties);
+
+    WebGLRenderingContext = function (impl) {
+      WebGLRenderingContextBase.call(this, impl);
+    };
+    WebGLRenderingContext.prototype =
+        Object.create(WebGLRenderingContextBase.prototype);
+    registerWrapper(OriginalWebGLRenderingContext, WebGLRenderingContext);
+
+  } else {
+
+    WebGLRenderingContext = function(impl) {
+      this.impl = impl;
+    };
+    mixin(WebGLRenderingContext.prototype, prototype);
+    registerWrapper(OriginalWebGLRenderingContext, WebGLRenderingContext,
+        instanceProperties);
+
+  }
 
   scope.wrappers.WebGLRenderingContext = WebGLRenderingContext;
 })(window.ShadowDOMPolyfill);
